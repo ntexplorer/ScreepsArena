@@ -12,6 +12,16 @@ export function loop() {
     for (const miner of myMiners) {
         transferEnergy(miner, mySpawn);
     }
+    if (checkMinerNum(myCreeps)) {
+        if (!verifyInProgress(myCreeps, mySpawn)) {
+            generateAttacker(mySpawn);
+        }
+    }
+    let myAttackers = getAttackers(myCreeps);
+    for (const attacker of myAttackers) {
+        attackEnemies(attacker);
+    }
+
 }
 
 //检查spawn中是否有正在生产的creep，有则返回true
@@ -62,7 +72,22 @@ function transferEnergy(creep, spawn) {
     }
 }
 
-// check whether current miner number is 1
+function attackEnemies(creep) {
+    let enemyCreeps = getObjectsByPrototype(Creep).filter(creep => !creep.my);
+    let enemySpawn = getObjectsByPrototype(StructureSpawn).find(spawn => !spawn.my);
+    if (enemyCreeps.length === 0) {
+        if (creep.attack(enemySpawn) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(enemySpawn);
+        }
+    } else {
+        let closestEnemy = findClosestByPath(creep, enemyCreeps);
+        if (creep.attack(closestEnemy) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(closestEnemy);
+        }
+    }
+}
+
+// check whether current miner number is full
 function checkMinerNum(creepArray) {
     let minerArray = [];
     let targetMinerNum = 3
@@ -83,5 +108,16 @@ function getMiners(creepArray) {
         }
     })
     return minerArray;
+}
+
+// return the attacker array
+function getAttackers(creepArray) {
+    let attackerArray = [];
+    creepArray.forEach(function (creep) {
+        if (creep.hasOwnProperty("type") && creep.type === "ATTACKER") {
+            attackerArray.push(creep);
+        }
+    })
+    return attackerArray;
 }
 
